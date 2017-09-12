@@ -41,7 +41,9 @@ class AddBlogposts(viewsets.ViewSet):
         desc = request.data.get('content')
         if not (title and desc):
             resp_data['message'] = 'Invalid title/content.'
-            return Response(data=resp_data, status=status.HTTP_400_BAD_REQUEST)
+            st = status.HTTP_400_BAD_REQUEST
+            return Response(data=get_formatted_response(resp_data, st, False),
+                            status=st)
 
         content_list = desc.split('\n\n')
         content = {}
@@ -61,10 +63,19 @@ class AddComments(viewsets.ViewSet):
         comment = request.data.get('comment')
         try:
             blog_id = uuid.UUID(blog_id)
-            # para = int(para)
         except Exception as e:
             st = status.HTTP_400_BAD_REQUEST
             resp_data = {'message': 'Invalid blog id - {}'.format(blog_id)}
+            return Response(data=get_formatted_response(resp_data, st, False),
+                            status=st)
+
+        blog_content = list(Blogpost.objects.filter(identifier=blog_id
+            ).values_list('content', flat=True))
+        if not blog_content or para not in blog_content[0].keys():
+            st = status.HTTP_400_BAD_REQUEST
+            resp_data = {
+                'message': 'Blog id and/or para no. not found'
+            }
             return Response(data=get_formatted_response(resp_data, st, False),
                             status=st)
 
